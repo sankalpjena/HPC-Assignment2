@@ -14,11 +14,19 @@ pthread_mutex_t item_done_mutex;
 int n_rows_col, n_threads, deg_func;
 int ** results;
 char * item_done;
+<<<<<<< HEAD
 int ** attractors;
 int ** convergences;
 
 void * compute_main(void * args);
 void * write_main(void * args);
+=======
+double ** attractors;
+int ** convergences;
+
+void * compute_main(void * args);
+void * write_main(void * argw);
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
 
 int main(int argc, char *argv[])
 {
@@ -27,23 +35,36 @@ int main(int argc, char *argv[])
       printf("Provide 3 arguments\n");
       exit(-1);
     }
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   char t = 't';
   int base = 10;
   char alph1 = *(argv[1]+1); // alph2 = *(argv[2]+1), alph3 = *(argv[3]);
   if(alph1 == t)
     {
       n_threads = strtol(argv[1]+2,NULL,base);
+<<<<<<< HEAD
       //printf("No of threads are %d\n",n_threads);
       n_rows_col = strtol(argv[2]+2, NULL, base);
       //printf("No of rows and columns is %d\n", n_rows_col);
       deg_func = atoi(argv[3]);
       //printf("Dimension is %d\n", deg_func);
+=======
+      printf("No of threads are %d\n",n_threads);
+      n_rows_col = strtol(argv[2]+2, NULL, base);
+      printf("No of rows and columns is %d\n", n_rows_col);
+      deg_func = atoi(argv[3]);
+      printf("Dimension is %d\n", deg_func);
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
     }
 
   else
     {
       n_threads = strtol(argv[2]+2, NULL, base);
+<<<<<<< HEAD
       //printf("No of threads are %d\n", n_threads);
       n_rows_col = strtol(argv[1]+2, NULL, base);
       //printf("No of rows and columns is %d\n", n_rows_col);
@@ -52,24 +73,47 @@ int main(int argc, char *argv[])
     }
   //double complex z = 3 + I * 8;
   //printf("Real part of z is %lf and imaginary part is %lf\n", creal(z), cimag(z));
+=======
+      printf("No of threads are %d\n", n_threads);
+      n_rows_col = strtol(argv[1]+2, NULL, base);
+      printf("No of rows and columns is %d\n", n_rows_col);
+      deg_func = atoi(argv[3]);
+      printf("Dimension is %d\n", deg_func);
+    }
+  double complex z = 3 + I * 8;
+  printf("Real part of z is %lf and imaginary part is %lf\n", creal(z), cimag(z));
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
 
   // Allocation of global variables
   results = (int **) malloc(sizeof(int*) * n_rows_col);
   item_done = (char *) malloc(sizeof(char) * n_rows_col);
+<<<<<<< HEAD
   attractors = (int **) malloc(sizeof(int *) * n_rows_col);
+=======
+  attractors = (double **) malloc(sizeof(double *) * n_rows_col); //change to int 
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   convergences = (int **) malloc(sizeof(int *) * n_rows_col);
 
   // Initialisation of mutex
   pthread_mutex_init(&item_done_mutex, NULL);
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   // creation of compute threads and write thread
   // dynamic allocation of number of threads
   pthread_t * compute_threads = (pthread_t * ) malloc(sizeof(pthread_t) * n_threads); // sizeof(pthread_t)
   pthread_t write_thread;
 
   int ret;
+<<<<<<< HEAD
   size_t tx; //ix,
 
+=======
+  size_t tx; //ix, 
+  
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   for ( tx = 0; tx < n_threads; ++tx )
     {
       size_t * args = malloc(sizeof(size_t));
@@ -86,8 +130,13 @@ int main(int argc, char *argv[])
       printf("Error creating write thread: %d\n", ret);
       exit(1);
     }
+<<<<<<< HEAD
 
   // Joining of compute threads
+=======
+  
+  // Joining of compute threads 
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   for ( tx=0; tx < n_threads; ++tx )
     {
       if (ret = pthread_join(compute_threads[tx], NULL))
@@ -99,10 +148,17 @@ int main(int argc, char *argv[])
 
   // Joining of write thread
   if (ret = pthread_join(write_thread, NULL))
+<<<<<<< HEAD
     {
       printf("Error joining thread: %d\n", ret);
       exit(1);
     }
+=======
+	{
+	  printf("Error joining thread: %d\n", ret);
+	  exit(1);
+	}
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
 
   // Destruction of the mutex
   pthread_mutex_destroy(&item_done_mutex);
@@ -124,13 +180,18 @@ void * compute_main(void * args)
   // printf("I'm in compute thread %lu\n", offset);
 
   // Attractor and convergence
+<<<<<<< HEAD
   int * attractor = (int *) malloc(sizeof(int) * n_rows_col);
+=======
+  double * attractor = (double *) malloc(sizeof(double) * n_rows_col); // change to int
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   int * convergence = (int *) malloc(sizeof(int) * n_rows_col);
 
   for ( size_t cx = 0; cx < n_rows_col; ++cx ) {
     attractor[cx] = 0;
     convergence[cx] = 0;
   }
+<<<<<<< HEAD
 
 
   // Creating a matrix that would hold the complex initialisations
@@ -173,6 +234,16 @@ void * compute_main(void * args)
   for ( size_t ix = offset; ix < n_rows_col; ix += n_threads )
     {
       int * result = (int*)malloc(sizeof(int) * n_rows_col); // I don't free this malloc and still don't get any error
+=======
+  
+  
+  // Creating a matrix that would hold the complex initialisations
+  // Switch Cases with Newtons Iterations and Checking
+
+  for ( size_t ix = offset; ix < n_rows_col; ix += n_threads )
+    {
+      int * result = (int*)malloc(sizeof(int) * n_rows_col);
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
       // compute work item
       results[ix] = result;
 
@@ -181,6 +252,7 @@ void * compute_main(void * args)
       pthread_mutex_unlock(&item_done_mutex);
       // compute with work item ix
       //printf("im in row %d\n", ix);
+<<<<<<< HEAD
 
     }
   free(attractor);
@@ -190,6 +262,11 @@ void * compute_main(void * args)
   free(x);
   free(y);
 
+=======
+    }
+  free(attractor);
+  free(convergence);
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   return NULL;
 }
 
@@ -197,14 +274,22 @@ void * compute_main(void * args)
 void * write_main(void * args)
 {
   char * item_done_loc = (char*)calloc(n_rows_col, sizeof(char));
+<<<<<<< HEAD
   //printf("I'm in write thread\n");
+=======
+  printf("I'm in write thread\n");
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
 
   // Open the files for attractor and convergence for writing
   char filename1[30];
   char filename2[30];
   sprintf(filename1, "newton_attractors_x%d.ppm", deg_func);
   sprintf(filename2, "newton_convergence_x%d.ppm", deg_func);
+<<<<<<< HEAD
   FILE * attr_file, * conv_file;
+=======
+  FILE * attr_file, * conv_file; 
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   //attr_file = fopen("newton_attractors_x3.ppm", "wb"); /* b - binary mode */
   //conv_file = fopen("newton_convergence_x3.ppm.ppm", "wb"); /* b - binary mode */
   attr_file = fopen(filename1, "wb"); /* b - binary mode */
@@ -221,6 +306,7 @@ void * write_main(void * args)
 
   // Creating array of colors
   char colors [12][12] ={
+<<<<<<< HEAD
 			 "255 000 000 ", //Red
 			 "000 255 000 ", //Green
 			 "000 000 255 ", //Blue
@@ -233,6 +319,20 @@ void * write_main(void * args)
 			 "000 128 128 ", //Teal
 			 "139 069 019 ", //Brown
 			 "128 000 000 ", //Maroon
+=======
+			"255 000 000 ", //Red
+			"000 255 000 ", //Green
+			"000 000 255 ", //Blue
+			"255 255 000 ", //Yellow
+			"255 000 255 ", //Magenta
+			"000 255 255 ", //Cyan
+			"255 069 000 ", //Orange
+			"255 020 147 ", //Pink
+			"128 000 128 ", //Purple
+			"000 128 128 ", //Teal
+			"139 069 019 ", //Brown
+			"128 000 000 ", //Maroon
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   };
 
   // Creating array of grayscale
@@ -290,13 +390,21 @@ void * write_main(void * args)
 			"250 250 250 ",
 			"255 255 255 ",
   };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   for ( size_t ix = 0; ix < n_rows_col; ) {
     pthread_mutex_lock(&item_done_mutex);
     if ( item_done[ix] != 0 )
       memcpy(item_done_loc, item_done, n_rows_col * sizeof(char));
     pthread_mutex_unlock(&item_done_mutex);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
     // Sleep for 100 microseconds
     const long INTERVAL_MS = 100 * NANO_SECOND_MULTIPLIER;
     struct timespec sleep_timespec;
@@ -309,7 +417,11 @@ void * write_main(void * args)
 
     int * result;
     for(; ix < n_rows_col && item_done_loc[ix] != 0; ++ix ) {
+<<<<<<< HEAD
       result = results[ix];
+=======
+       result = results[ix];
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
 
       // Write result
       attr_file = fopen(filename1, "ab"); /* b - binary mode */
@@ -328,19 +440,33 @@ void * write_main(void * args)
       fwrite(row_conv, 2*12+1, 1, conv_file);
 
       //char row_attr[sizeof(colors[0]) * n_rows_col + 1)];
+<<<<<<< HEAD
 
 
 
+=======
+      
+      
+      
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
       // Closing the files
       fflush(attr_file);
       fflush(conv_file);
       fclose(attr_file);
       fclose(conv_file);
+<<<<<<< HEAD
       free(result);
     }
 
   }
 
+=======
+      free(result);      
+    }
+    
+  }
+  
+>>>>>>> bb3664281d74d681ba50e80aa93a08b5a95b2715
   free(item_done_loc);
   return NULL;
 }
