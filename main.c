@@ -8,7 +8,7 @@
 #define UPPER_BOUND 100000000000000000000
 #define LOWER_BOUND 0.000006
 #define NANO_SECOND_MULTIPLIER  1000000  // 1 millisecond = 1,000,000 Nanoseconds
-
+#define MAX_ITERATION 52
 
 pthread_mutex_t item_done_mutex;
 int n_rows_col, n_threads, deg_func;
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
       exit(-1);
     }
 
-  printf("Assignment 2\n");
+  printf("Assignment 2\n\n");
   char t = 't';
   int base = 10;
   char alph1 = *(argv[1]+1); // alph2 = *(argv[2]+1), alph3 = *(argv[3]);
@@ -169,12 +169,219 @@ void * compute_main(void * args)
   //printf("Real: %lf and Complex: %lf\n", creal(z[1][1]), cimag(z[1][1]));
 
   // Switch Cases with Newtons Iterations and Checking
+  double complex roots[deg_func-1];
 
+  switch(deg_func)
+    {
+
+    case 1:
+      //STATEMENTS FOR DEGREE 1
+      roots[0] =  1;
+      break;
+
+    case 2:
+      //STATEMENTS FOR DEGREE 2
+      roots[0] =  1;
+      roots[1] =  -1;
+      break;
+
+
+    case 3:
+      //STATEMENTS FOR DEGREE 3
+      roots[0] =  1;
+      roots[1] =  -0.500000000000000 - 0.866025403784439 *I;
+      roots[2] =  -0.500000000000000 + 0.866025403784439 *I;
+      break;
+
+    case 4:
+      //STATEMENTS FOR DEGREE 4
+      roots[0] =  1;
+      roots[1] =  -1;
+      roots[2] =  0+1*I;
+      roots[3] =  0-1*I;
+      break;
+
+    case 5:
+      //STATEMENTS FOR DEGREE 5
+      roots[0] =  1;
+      roots[1] =  -0.809016994374947 - 0.587785252292473 *I;
+      roots[2] =  0.309016994374947 + 0.951056516295154 *I;
+      roots[3] =  0.309016994374947 - 0.951056516295154 *I;
+      roots[4] =  -0.809016994374947 + 0.587785252292473 *I;
+      break;
+
+    case 6:
+      //STATEMENTS FOR DEGREE 6
+      roots[0] =  1;
+      roots[1] =  -1;
+      roots[2] =  -0.500000000000000 - 0.866025403784439 *I;
+      roots[3] =  0.500000000000000 + 0.866025403784439 *I;
+      roots[4] =  0.500000000000000 - 0.866025403784439 *I;
+      roots[5] =  -0.500000000000000 + 0.866025403784439 *I;
+      break;
+
+    case 7:
+      //STATEMENTS FOR DEGREE 7
+      roots[0] =  1;
+      roots[1] =  -0.900968867902419 - 0.433883739117558 *I;
+      roots[2] =  0.623489801858734 + 0.781831482468030 *I;
+      roots[3] =  -0.222520933956314 - 0.974927912181824 *I;
+      roots[4] =  -0.222520933956314 + 0.974927912181824 *I;
+      roots[5] =  0.623489801858734 - 0.781831482468030 *I;
+      roots[6] =  -0.900968867902419 + 0.433883739117558 *I;
+      break;
+
+    case 8:
+      //STATEMENTS FOR DEGREE 8
+      roots[0] =  1;
+      roots[1] =  -1;
+      roots[2] =  0+1*I;
+      roots[3] =  0-1*I;
+      roots[4] =  -0.707106781186548 - 0.707106781186548 *I;
+      roots[5] =  0.707106781186548 + 0.707106781186548 *I;
+      roots[6] =  0.707106781186548 - 0.707106781186548 *I;
+      roots[7] =  -0.707106781186548 + 0.707106781186548 *I;
+      break;
+
+    case 9:
+      //STATEMENTS FOR DEGREE 9
+      roots[0] =  1;
+      roots[1] =  -0.939692620785908 - 0.342020143325669 *I;
+      roots[2] =  0.766044443118978 + 0.642787609686539 *I;
+      roots[3] =  -0.500000000000000 - 0.866025403784439 *I;
+      roots[4] =  0.173648177666930 + 0.984807753012208 *I;
+      roots[5] =  0.173648177666930 - 0.984807753012208 *I;
+      roots[6] =  -0.500000000000000 + 0.866025403784439 *I;
+      roots[7] =  0.766044443118978 - 0.642787609686539 *I;
+      roots[8] =  -0.939692620785908 + 0.342020143325669 *I;
+      break;
+
+    default:
+      fprintf(stderr, "unexpected degree\n");
+      exit(1);     //Was Commented out for the purpose of jotting down code - maybe required in final file
+
+    }
+
+  //BEGINNING ITERATION FOR NEWTONS COMPUTATION
+
+  double complex xk;    //May have to convert to pointer to avoid error(?)
+  double complex x_k1;    //May have to convert to pointer to avoid error(?)
+  double complex xdr;   //May have to convert to pointer to avoid error(?)
+
+  int conv;   //Flag to store no. of iterations for convergence
+  int attr;   //Flag to store whic root the iteration converges to
 
   for ( size_t ix = offset; ix < n_rows_col; ix += n_threads )
     {
-      int * result = (int*)malloc(sizeof(int) * n_rows_col); // I don't free this malloc and still don't get any error
+      int * result = (int *)malloc(sizeof(int) * n_rows_col); // I don't free this malloc and still don't get any error
       // compute work item
+      for ( size_t jx = 0; jx < n_rows_col; ++jx )
+	{
+	  xk = z[ix][jx]; //Assigning initial starting value to xk for iteration --> may have to convert xk and x_k1 to pointer?
+
+	  //PERFORMING VALIDATION CHECKS FOR ITERATIONS AND FOR ROOTS
+	  for ( conv = 0, attr = 99; conv < MAX_ITERATION ; ++conv )     //default value of attr set to 99 as that doesnt correspond to any root/color
+	    {
+	      if (!((creal(xk)*creal(xk) <= (double) UPPER_BOUND) && (cimag(xk)*cimag(xk) <= (double) UPPER_BOUND))) //Code to check if uppper bound of real/ and imaginary parts is NOT (! --> Operator) lesser than the limit
+		{
+		  attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge" --> as menitioned in the assignment
+		  break;
+		}
+	      //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
+	      if (!(creal(xk * conj(xk)) >= (double) LOWER_BOUND)) //Code to check if lower bound of absolute value of the complex number is NOT (! --> Operator) greater than the limit
+		{
+		  attr = 10;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge" --> as menitioned in the assignment
+		  break;
+		}
+	      for (int i = 0; i < deg_func; i++)
+		{
+
+		  xdr = xk-roots[i];
+
+		  //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
+		  if (!(creal(xdr * conj(xdr)) >= LOWER_BOUND))  //Code to check if lower bound of absolute value of x-root[i] is NOT (! --> Operator) greater than the limit
+		    {
+		      attr = i;   //A color associated to the actual root is assigned
+		      break;
+		    }
+		}
+
+	      if ( attr != 99 )
+		{
+		  break;
+		}
+
+	      // COMPUTATION OF NEWTONS ITERATION
+
+	      switch (deg_func)
+		{
+		case 1:
+		  //STATEMENTS FOR DEGREE 1
+		  x_k1 = xk - (xk-1);
+		  break;
+
+		case 2:
+		  //STATEMENTS FOR DEGREE 2
+		  x_k1 = xk - (((xk*xk)-1)/(2*xk));
+		  break;
+
+		case 3:
+		  //STATEMENTS FOR DEGREE 3
+		  x_k1 = xk - (((xk*xk*xk)-1)/(3*xk*xk));
+		  break;
+
+		case 4:
+		  //STATEMENTS FOR DEGREE 4
+		  x_k1 = xk - (((xk*xk*xk*xk)-1)/(4*xk*xk*xk));
+		  break;
+
+		case 5:
+		  //STATEMENTS FOR DEGREE 5
+		  x_k1 = xk - (((xk*xk*xk*xk*xk)-1)/(5*xk*xk*xk*xk));
+		  break;
+
+		case 6:
+		  //STATEMENTS FOR DEGREE 6
+		  x_k1 = xk - (((xk*xk*xk*xk*xk*xk)-1)/(6*xk*xk*xk*xk*xk));
+		  break;
+
+		case 7:
+		  //STATEMENTS FOR DEGREE 7
+		  x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk)-1)/(7*xk*xk*xk*xk*xk*xk));
+		  break;
+
+		case 8:
+		  //STATEMENTS FOR DEGREE 8
+		  x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk*xk)-1)/(8*xk*xk*xk*xk*xk*xk*xk));
+		  break;
+
+		case 9:
+		  //STATEMENTS FOR DEGREE 9
+		  x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk*xk*xk)-1)/(9*xk*xk*xk*xk*xk*xk*xk*xk));
+		  break;
+
+		default:
+		  fprintf(stderr, "unexpected degree\n");
+		  exit(1);     //Was Commented out for the purpose of jotting down code - maybe required in final file
+		}
+
+
+	      xk = x_k1;    //Updating the value of xk with the newly computed value for the next iteraion
+
+
+	    }
+
+	  if(attr == 99)
+	    {
+	      attr =11;
+	    }
+
+	  printf("Complex Number: %0.10lf + (%0.10lf)i\n", creal(xk), cimag(xk));
+	  printf("Convergence after: %d iteration\n", conv);
+	  printf("Attractor at %d root\n", attr);
+
+
+	}
       results[ix] = result;
 
       pthread_mutex_lock(&item_done_mutex);
@@ -193,7 +400,7 @@ void * compute_main(void * args)
 
   return NULL;
 }
-
+  
 // Writing to file - write_main()
 void * write_main(void * args)
 {
