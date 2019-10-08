@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
       exit(-1);
     }
 
+  printf("Assignment 2\n");
   char t = 't';
   int base = 10;
   char alph1 = *(argv[1]+1); // alph2 = *(argv[2]+1), alph3 = *(argv[3]);
