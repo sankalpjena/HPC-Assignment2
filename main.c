@@ -5,7 +5,7 @@
 #include<complex.h>
 #include<string.h>
 
-#define UPPER_BOUND 100000000000000000000
+#define UPPER_BOUND 100000000000000000000ULL
 #define LOWER_BOUND 0.000006
 #define NANO_SECOND_MULTIPLIER  1000000  // 1 millisecond = 1,000,000 Nanoseconds
 #define MAX_ITERATION 52
@@ -271,26 +271,32 @@ void * compute_main(void * args)
   int conv;   //Flag to store no. of iterations for convergence
   int attr;   //Flag to store whic root the iteration converges to
 
+  size_t conv_x;
+  size_t attr_x;
+  
   for ( size_t ix = offset; ix < n_rows_col; ix += n_threads )
     {
       int * result = (int *)malloc(sizeof(int) * n_rows_col); // I don't free this malloc and still don't get any error
+      conv_x = 0;
+      attr_x = 0;
+      
       // compute work item
       for ( size_t jx = 0; jx < n_rows_col; ++jx )
 	{
-	  xk = z[ix][jx]; //Assigning initial starting value to xk for iteration --> may have to convert xk and x_k1 to pointer?
+	  xk = z[ix][jx]; //Assigning initial starting value to xk for iteration
 
 	  //PERFORMING VALIDATION CHECKS FOR ITERATIONS AND FOR ROOTS
 	  for ( conv = 0, attr = 99; conv < MAX_ITERATION ; ++conv )     //default value of attr set to 99 as that doesnt correspond to any root/color
 	    {
-	      if (!((creal(xk)*creal(xk) <= (double) UPPER_BOUND) && (cimag(xk)*cimag(xk) <= (double) UPPER_BOUND))) //Code to check if uppper bound of real/ and imaginary parts is NOT (! --> Operator) lesser than the limit
+	      if (!((creal(xk)*creal(xk) <= (unsigned long long) UPPER_BOUND) && (cimag(xk)*cimag(xk) <= (unsigned long long) UPPER_BOUND))) //Code to check if uppper bound of real/ and imaginary parts 
 		{
-		  attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge" --> as menitioned in the assignment
+		  attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge
 		  break;
 		}
 	      //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
 	      if (!(creal(xk * conj(xk)) >= (double) LOWER_BOUND)) //Code to check if lower bound of absolute value of the complex number is NOT (! --> Operator) greater than the limit
 		{
-		  attr = 10;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge" --> as menitioned in the assignment
+		  attr = 10;    //A Default color (maroon) which is not associated to any actual root is assigned
 		  break;
 		}
 	      for (int i = 0; i < deg_func; i++)
@@ -299,7 +305,7 @@ void * compute_main(void * args)
 		  xdr = xk-roots[i];
 
 		  //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
-		  if (!(creal(xdr * conj(xdr)) >= LOWER_BOUND))  //Code to check if lower bound of absolute value of x-root[i] is NOT (! --> Operator) greater than the limit
+		  if (!(creal(xdr * conj(xdr)) >= (double) LOWER_BOUND))  //Code to check if lower bound of absolute value of x-root[i] is NOT (! --> Operator) greater than the limit
 		    {
 		      attr = i;   //A color associated to the actual root is assigned
 		      break;
@@ -365,7 +371,8 @@ void * compute_main(void * args)
 		  exit(1);     //Was Commented out for the purpose of jotting down code - maybe required in final file
 		}
 
-
+	      //printf("Complex Number: %0.20lf + (%0.20lf)i\n", creal(xk), cimag(xk));
+	 
 	      xk = x_k1;    //Updating the value of xk with the newly computed value for the next iteraion
 
 
@@ -373,15 +380,35 @@ void * compute_main(void * args)
 
 	  if(attr == 99)
 	    {
-	      attr =11;
+	      attr = 11;
 	    }
+	  convergence[conv_x] = conv;
+	  attractor[attr_x] = attr;
 
-	  printf("Complex Number: %0.10lf + (%0.10lf)i\n", creal(xk), cimag(xk));
-	  printf("Convergence after: %d iteration\n", conv);
-	  printf("Attractor at %d root\n", attr);
+	  conv_x++;
+	  attr_x++;
+	  
+	  //printf("Converged Complex Number: %0.20lf + (%0.20lf)i\n", creal(xk), cimag(xk));
+	  //printf("Convergence after: %d iteration\n", conv);
+	  //printf("Attractor at %d root\n", attr);
 
 
 	}
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  *(convergences + cx) = *(convergence + cx);
+	  *(attractors + cx) = *(attractor + cx);
+	  printf("Convergence : %d | ", *(convergence + cx));//convergence[cx]);
+	  printf("Attractor : %d \n", attractor[cx]);
+	}
+
+
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  printf("Convergences : %d | ", *(convergences + cx));//convergences[cx]);
+	  printf("Attractors : %d \n", attractors[cx]);
+	}
+      
       results[ix] = result;
 
       pthread_mutex_lock(&item_done_mutex);
@@ -523,7 +550,38 @@ void * write_main(void * args)
       attr_file = fopen(filename1, "ab"); /* b - binary mode */
       conv_file = fopen(filename2, "ab"); /* b - binary mode */
 
-      char row_attr[25];
+      char row_attr[(n_rows_col*12)+1];
+      char temp[1] = {'\n'};
+
+      int i = 0;
+
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  int temp = (int) *(attractors+cx);
+	  printf("Value of temp is %d\n", temp);
+	  printf("Color at Attractors : %s \n", *(colors + temp));
+	  memcpy(row_attr+(i*12),*(colors + temp), 12);
+	  i++;
+	}
+
+      memcpy(row_attr+(n_rows_col*12), temp, 1);
+      fwrite(row_attr, (n_rows_col*12)+1, 1, attr_file);
+
+      i=0;
+
+      char row_conv[(n_rows_col*12)+1];
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  int temp = (int) *(convergences+cx);
+	  printf("Color at Convergences : %s \n", *(gray + temp));
+	  memcpy(row_conv+(i*12),*(gray + temp), 12);
+	  i++;
+	}
+
+      memcpy(row_conv+(n_rows_col*12), temp, 1);
+      fwrite(row_conv, (n_rows_col*12)+1, 1, conv_file);
+      
+      /*char row_attr[25];
       char temp[1] = {'\n'};
       memcpy(row_attr,*(colors+1), 12);
       memcpy(row_attr+12, *(colors+2), 12);
@@ -533,7 +591,7 @@ void * write_main(void * args)
       memcpy(row_conv,*(gray+1), 12);
       memcpy(row_conv+12, *(gray+20), 12);
       memcpy(row_conv+2*12, temp, 1);
-      fwrite(row_conv, 2*12+1, 1, conv_file);
+      fwrite(row_conv, 2*12+1, 1, conv_file);*/
 
       //char row_attr[sizeof(colors[0]) * n_rows_col + 1)];
 
