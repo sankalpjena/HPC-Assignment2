@@ -394,7 +394,15 @@ void * compute_main(void * args)
 
 
 	}
-      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+      convergences[ix] = convergence;
+      attractors[ix] = attractor;
+
+       pthread_mutex_lock(&item_done_mutex);
+      item_done[ix] = 1;
+      pthread_mutex_unlock(&item_done_mutex);
+     
+      //item done
+      /*for ( size_t cx = 0; cx < n_rows_col; ++cx )
 	{
 	  *(convergences + cx) = *(convergence + cx);
 	  *(attractors + cx) = *(attractor + cx);
@@ -408,12 +416,9 @@ void * compute_main(void * args)
 	  printf("Convergences : %d | ", *(convergences + cx));//convergences[cx]);
 	  printf("Attractors : %d \n", attractors[cx]);
 	}
-      
+      */
       results[ix] = result;
 
-      pthread_mutex_lock(&item_done_mutex);
-      item_done[ix] = 1;
-      pthread_mutex_unlock(&item_done_mutex);
       // compute with work item ix
       //printf("im in row %d\n", ix);
 
@@ -557,10 +562,11 @@ void * write_main(void * args)
 
       for ( size_t cx = 0; cx < n_rows_col; ++cx )
 	{
-	  int temp = (int) *(attractors+cx);
-	  printf("Value of temp is %d\n", temp);
-	  printf("Color at Attractors : %s \n", *(colors + temp));
-	  memcpy(row_attr+(i*12),*(colors + temp), 12);
+	  //int temp = *(attractors+cx);
+	  int attractor_pixel_ix = attractors[ix][cx]; //Use this instead of temp.
+	  printf("Value of temp is %d\n", attractor_pixel_ix);
+	  printf("Color at Attractors : %s \n\n", *(colors + attractor_pixel_ix));
+	  memcpy(row_attr+(i*12),*(colors + attractor_pixel_ix), 12);
 	  i++;
 	}
 
@@ -570,16 +576,17 @@ void * write_main(void * args)
       i=0;
 
       char row_conv[(n_rows_col*12)+1];
-      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+      /*for ( size_t cx = 0; cx < n_rows_col; ++cx )
 	{
-	  int temp = (int) *(convergences+cx);
-	  printf("Color at Convergences : %s \n", *(gray + temp));
-	  memcpy(row_conv+(i*12),*(gray + temp), 12);
+	  //int temp = (int) *(convergences+cx);
+	  int convergence_pixel_ix = convergences[ix][cx]; //Use this instead of temp.
+	  printf("Color at Convergences : %s \n\n", *(gray +  convergence_pixel_ix));
+	  memcpy(row_conv+(i*12),*(gray +  convergence_pixel_ix), 12);
 	  i++;
-	}
+	  }*/
 
-      memcpy(row_conv+(n_rows_col*12), temp, 1);
-      fwrite(row_conv, (n_rows_col*12)+1, 1, conv_file);
+      //memcpy(row_conv+(n_rows_col*12), temp, 1);
+      //fwrite(row_conv, (n_rows_col*12)+1, 1, conv_file);
       
       /*char row_attr[25];
       char temp[1] = {'\n'};
