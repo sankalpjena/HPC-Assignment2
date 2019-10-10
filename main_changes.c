@@ -5,7 +5,7 @@
 #include<complex.h>
 #include<string.h>
 
-#define UPPER_BOUND 100000000000000000000ULL
+#define UPPER_BOUND 10e20
 #define LOWER_BOUND 0.000006
 #define NANO_SECOND_MULTIPLIER  1000000  // 1 millisecond = 1,000,000 Nanoseconds
 #define MAX_ITERATION 52
@@ -124,6 +124,14 @@ void * compute_main(void * args)
   free(args);
   // printf("I'm in compute thread %lu\n", offset);
 
+  // Attractor and convergence
+  int * attractor = (int *) malloc(sizeof(int) * n_rows_col);
+  int * convergence = (int *) malloc(sizeof(int) * n_rows_col);
+
+  for ( size_t cx = 0; cx < n_rows_col; ++cx ) {
+    attractor[cx] = 0;
+    convergence[cx] = 0;
+  }
 
 
   // Creating a matrix that would hold the complex initialisations
@@ -268,16 +276,7 @@ void * compute_main(void * args)
   
   for ( size_t ix = offset; ix < n_rows_col; ix += n_threads )
     {
-
-      // Attractor and convergence
-      int * attractor = (int *) malloc(sizeof(int) * n_rows_col);
-      int * convergence = (int *) malloc(sizeof(int) * n_rows_col);
-
-      for ( size_t cx = 0; cx < n_rows_col; ++cx ) {
-	attractor[cx] = 0;
-	convergence[cx] = 0;
-      }
-      
+      int * attractor = (int *)malloc(sizeof(int) * n_rows_col); // I don't free this malloc and still don't get any error
       conv_x = 0;
       attr_x = 0;
       
@@ -287,27 +286,27 @@ void * compute_main(void * args)
 	  xk = z[ix][jx]; //Assigning initial starting value to xk for iteration
 
 	  //PERFORMING VALIDATION CHECKS FOR ITERATIONS AND FOR ROOTS
-	  for ( conv = 0, attr = 99; conv<MAX_ITERATION; ++conv )     //default value of attr set to 99 as that doesnt correspond to any root/color
+	  for ( conv = 0, attr = 99; conv < MAX_ITERATION ; ++conv )     //default value of attr set to 99 as that doesnt correspond to any root/color
 	    {
-	      if (!((creal(xk)*creal(xk) <= UPPER_BOUND) && (cimag(xk)*cimag(xk) <= UPPER_BOUND))) //Code to check if uppper bound of real/ and imaginary parts 
+	      if (creal(xk) > UPPER_BOUND || creal(xk) < -UPPER_BOUND && (cimag(xk)*cimag(xk) <= (unsigned long long) UPPER_BOUND))) //Code to check if uppper bound of real/ and imaginary parts 
 		{
 		  attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned, to --> "treat these cases as if there was an additional zero of f(x) to which these iterations converge
-		  //conv = 52;
 		  break;
 		}
 	      //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
-	      if (!(creal(xk * conj(xk)) >= LOWER_BOUND)) //Code to check if lower bound of absolute value of the complex number is NOT (! --> Operator) greater than the limit
+	      if (!(creal(xk * conj(xk)) >= (double) LOWER_BOUND)) //Code to check if lower bound of absolute value of the complex number is NOT (! --> Operator) greater than the limit
 		{
 		  attr = 10;    //A Default color (maroon) which is not associated to any actual root is assigned
 		  break;
 		}
+	      if ( xknorm >= (1-LOWER_BOUND)*(1-LOWER_BOUND) && xknorm <=
 	      for (int i = 0; i < deg_func; i++)
 		{
 
 		  xdr = xk-roots[i];
 
 		  //If there is an error here it might be due to a complex number computation being directly compared to lower bound value which might be int. If not, then all good, can delete comment
-		  if (!(creal(xdr * conj(xdr)) >= LOWER_BOUND))  //Code to check if lower bound of absolute value of x-root[i] is NOT (! --> Operator) greater than the limit
+		  if (!(creal(xdr * conj(xdr)) >= (double) LOWER_BOUND))  //Code to check if lower bound of absolute value of x-root[i] is NOT (! --> Operator) greater than the limit
 		    {
 		      attr = i;   //A color associated to the actual root is assigned
 		      break;
@@ -382,11 +381,11 @@ void * compute_main(void * args)
 
 	  if(attr == 99)
 	    {
-	      attr = 11; 
+	      attr = 11;
 	    }
-
 	  convergence[conv_x] = conv;
 	  attractor[attr_x] = attr;
+
 	  conv_x++;
 	  attr_x++;
 	  
@@ -396,31 +395,37 @@ void * compute_main(void * args)
 
 
 	}
-
       convergences[ix] = convergence;
       attractors[ix] = attractor;
-      
-      /* for ( size_t cx = 0; cx < n_rows_col; ++cx )
-	{
-	  printf("Convergence : %d | ", convergence[cx]);//convergence[cx]);
-	  printf("Attractor : %d \n", attractor[cx]);
-	}
 
-      
-      for ( size_t cx = 0; cx < n_rows_col; ++cx )
-	{
-	  printf("Convergences : %d | ", convergences[ix][cx]);
-	  printf("Attractors : %d \n", attractors[ix][cx]);
-	}
-      */
-
-      pthread_mutex_lock(&item_done_mutex);
+       pthread_mutex_lock(&item_done_mutex);
       item_done[ix] = 1;
       pthread_mutex_unlock(&item_done_mutex);
      
-      //free(convergence);
-      //free(attractor); 
+      //item done
+      /*for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  *(convergences + cx) = *(convergence + cx);
+	  *(attractors + cx) = *(attractor + cx);
+	  printf("Convergence : %d | ", *(convergence + cx));//convergence[cx]);
+	  printf("Attractor : %d \n", attractor[cx]);
+	}
+
+
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  printf("Convergences : %d | ", *(convergences + cx));//convergences[cx]);
+	  printf("Attractors : %d \n", attractors[cx]);
+	}
+      */
+      results[ix] = result;
+
+      // compute with work item ix
+      //printf("im in row %d\n", ix);
+
     }
+  free(attractor);
+  free(convergence);
   free(zentries);
   free(z);
   free(x);
@@ -440,7 +445,6 @@ void * write_main(void * args)
   char filename2[30];
   sprintf(filename1, "newton_attractors_x%d.ppm", deg_func);
   sprintf(filename2, "newton_convergence_x%d.ppm", deg_func);
-
   FILE * attr_file, * conv_file;
   //attr_file = fopen("newton_attractors_x3.ppm", "wb"); /* b - binary mode */
   //conv_file = fopen("newton_convergence_x3.ppm.ppm", "wb"); /* b - binary mode */
@@ -452,8 +456,12 @@ void * write_main(void * args)
   fprintf(attr_file, "P3\n%d %d\n%d\n", n_rows_col, n_rows_col, max_color_val);
   fprintf(conv_file, "P3\n%d %d\n%d\n", n_rows_col, n_rows_col, max_color_val);
 
+  // Closing the files
+  fclose(attr_file);
+  fclose(conv_file);
+
   // Creating array of colors
-  char colors [12][12] ={
+  char colors [12][13] ={
 			 "255 000 000 ", //Red
 			 "000 255 000 ", //Green
 			 "000 000 255 ", //Blue
@@ -469,7 +477,7 @@ void * write_main(void * args)
   };
 
   // Creating array of grayscale
-  char gray [52][12] = {
+  char gray [52][13] = {
 			"000 000 000 ",
 			"005 005 005 ",
 			"010 010 010 ",
@@ -540,56 +548,75 @@ void * write_main(void * args)
       continue;
     }
 
-    for(; ix < n_rows_col && item_done_loc[ix] != 0; ++ix )
-      {
-	// Write result
-	//attr_file = fopen(filename1, "ab"); /* b - binary mode */
-	//conv_file = fopen(filename2, "ab"); /* b - binary mode */
-	
-	char row_attr[(n_rows_col*12)+1];
-	char temp[1] = {'\n'};
-	char row_conv[(n_rows_col*12)+1];
-	int i = 0;
+    int * result;
+    for(; ix < n_rows_col && item_done_loc[ix] != 0; ++ix ) {
+      attractor = attractors[ix];
+
+      // Write result
+      attr_file = fopen(filename1, "ab"); /* b - binary mode */
+      conv_file = fopen(filename2, "ab"); /* b - binary mode */
+
+      char row_attr[(n_rows_col*12)+1];
+      char temp[1] = {'\n'};
+
+      int i = 0;
+
+      for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  //int temp = *(attractors+cx);
+	  int attractor_pixel_ix = attractors[ix][cx]; //Use this instead of temp.
+	  printf("Value of temp is %d\n", attractor_pixel_ix);
+	  printf("Color at Attractors : %s \n\n", *(colors + attractor_pixel_ix));
+	  memcpy(row_attr+(i*12),colors[attractor_pixel_ix], 12);
+	  i++;
+	}
+
+      row_attr[n_rows_col*12] = '\n';
+      memcpy(row_attr+(n_rows_col*12), temp, 1);
+      fwrite(row_attr, (n_rows_col*12)+1, 1, attr_file);
+
+      i=0;
+
+      char row_conv[(n_rows_col*12)+1];
+      /*for ( size_t cx = 0; cx < n_rows_col; ++cx )
+	{
+	  //int temp = (int) *(convergences+cx);
+	  int convergence_pixel_ix = convergences[ix][cx]; //Use this instead of temp.
+	  printf("Color at Convergences : %s \n\n", *(gray +  convergence_pixel_ix));
+	  memcpy(row_conv+(i*12),*(gray +  convergence_pixel_ix), 12);
+	  i++;
+	  }*/
+
+      //memcpy(row_conv+(n_rows_col*12), temp, 1);
+      //fwrite(row_conv, (n_rows_col*12)+1, 1, conv_file);
       
-	for ( size_t cx = 0; cx < n_rows_col; ++cx )
-	  {
-	    //int temp = (int) *(attractors+cx);
-	    int attractor_pixel_ix = attractors[ix][cx];
-	    // printf("Value of attractor pixel ix is %d\n", attractors[ix][cx]);
-	    //printf("Color at Attractors : %s \n", colors[attractor_pixel_ix]);
-	    memcpy(row_attr+(i*12),colors[attractor_pixel_ix], 12);
-	    //int temp = (int) *(convergences+cx);
-	    int convergence_pixel_ix = convergences[ix][cx];
-	    //printf("Color at Convergences : %s \n", gray[convergence_pixel_ix]);
-	    memcpy(row_conv+(i*12), gray[convergence_pixel_ix], 12);
-	    i++;
-	  }
+      /*char row_attr[25];
+      char temp[1] = {'\n'};
+      memcpy(row_attr,*(colors+1), 12);
+      memcpy(row_attr+12, *(colors+2), 12);
+      memcpy(row_attr+2*12, temp, 1);
+      fwrite(row_attr, 2*12+1, 1, attr_file);
+      char row_conv[25];
+      memcpy(row_conv,*(gray+1), 12);
+      memcpy(row_conv+12, *(gray+20), 12);
+      memcpy(row_conv+2*12, temp, 1);
+      fwrite(row_conv, 2*12+1, 1, conv_file);*/
 
-	memcpy(row_attr+(n_rows_col*12), temp, 1);
-	fwrite(row_attr, (n_rows_col*12)+1, 1, attr_file);
+      //char row_attr[sizeof(colors[0]) * n_rows_col + 1)];
 
-	memcpy(row_conv+(n_rows_col*12), temp, 1);
-	fwrite(row_conv, (n_rows_col*12)+1, 1, conv_file);
-      
-	/*char row_attr[25];
-	  char temp[1] = {'\n'};
-	  memcpy(row_attr,*(colors+1), 12);
-	  memcpy(row_attr+12, *(colors+2), 12);
-	  memcpy(row_attr+2*12, temp, 1);
-	  fwrite(row_attr, 2*12+1, 1, attr_file);
-	  char row_conv[25];
-	  memcpy(row_conv,*(gray+1), 12);
-	  memcpy(row_conv+12, *(gray+20), 12);
-	  memcpy(row_conv+2*12, temp, 1);
-	  fwrite(row_conv, 2*12+1, 1, conv_file);*/
 
-	//char row_attr[sizeof(colors[0]) * n_rows_col + 1)];
-  }
+      free(attractor);
+
+      // Closing the files
+      fflush(attr_file);
+      fflush(conv_file);
+      fclose(attr_file);
+      fclose(conv_file);
+      free(result);
+    }
 
   }
 
   free(item_done_loc);
-  fclose(attr_file);
-  fclose(conv_file);
   return NULL;
 }
