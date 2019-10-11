@@ -257,7 +257,7 @@ void * compute_main(void * args)
         //PERFORMING VALIDATION CHECKS FOR ITERATIONS AND FOR ROOTS
 
         //Default value of attr set to 99 as that doesnt correspond to any root/color
-	  for ( conv = 0, attr = 99; conv<MAX_ITERATION; ++conv ) {
+	  for ( conv = 0, attr = 99; /*conv<MAX_ITERATION*/; ++conv ) {
 
         if ((abs_real_xk > UPPER_BOUND) && (abs_imag_xk > UPPER_BOUND)) { 
           attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned
