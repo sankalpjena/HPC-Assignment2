@@ -13,7 +13,6 @@
 
 pthread_mutex_t item_done_mutex;
 int n_lines, n_threads, deg_func;
-int ** results;
 char * item_done;
 int ** attractors;
 int ** convergences;
@@ -32,31 +31,22 @@ int main(int argc, char *argv[])
   printf("Assignment 2\n\n");
   char t = 't';
   int base = 10;
-  char alph1 = *(argv[1]+1); // alph2 = *(argv[2]+1), alph3 = *(argv[3]);
+  char alph1 = *(argv[1]+1); 
   if(alph1 == t)
     {
       n_threads = strtol(argv[1]+2,NULL,base);
-      //printf("No of threads are %d\n",n_threads);
       n_lines = strtol(argv[2]+2, NULL, base);
-      //printf("No of rows and columns is %d\n", n_lines);
       deg_func = atoi(argv[3]);
-      //printf("Dimension is %d\n", deg_func);
     }
 
   else
     {
       n_threads = strtol(argv[2]+2, NULL, base);
-      //printf("No of threads are %d\n", n_threads);
       n_lines = strtol(argv[1]+2, NULL, base);
-      //printf("No of rows and columns is %d\n", n_lines);
       deg_func = atoi(argv[3]);
-      //printf("Dimension is %d\n", deg_func);
     }
-  //double complex z = 3 + I * 8;
-  //printf("Real part of z is %lf and imaginary part is %lf\n", creal(z), cimag(z));
 
   // Allocation of global variables
-  results = (int **) malloc(sizeof(int*) * n_lines);
   item_done = (char *) malloc(sizeof(char) * n_lines);
   attractors = (int **) malloc(sizeof(int *) * n_lines);
   convergences = (int **) malloc(sizeof(int *) * n_lines);
@@ -66,18 +56,18 @@ int main(int argc, char *argv[])
 
   // creation of compute threads and write thread
   // dynamic allocation of number of threads
-  pthread_t * compute_threads = (pthread_t * ) malloc(sizeof(pthread_t) * n_threads); // sizeof(pthread_t)
+  pthread_t * compute_threads = (pthread_t * ) malloc(sizeof(pthread_t) * n_threads); 
   pthread_t write_thread;
 
   int ret;
-  size_t tx; //ix,
+  size_t tx; 
 
   for ( tx = 0; tx < n_threads; ++tx )
     {
       size_t * args = malloc(sizeof(size_t));
       *args = tx;
 
-      if (ret = pthread_create(&compute_threads[tx], NULL, compute_main, (void*)args)) // (pthread_t * restrict)
+      if (ret = pthread_create(&compute_threads[tx], NULL, compute_main, (void*)args)) 
   {
     printf("Error creating compute thread: %d\n", ret);
     exit(1);
@@ -110,7 +100,6 @@ int main(int argc, char *argv[])
   pthread_mutex_destroy(&item_done_mutex);
 
   free(compute_threads);
-  free(results);
   free(item_done);
   free(attractors);
   free(convergences);
@@ -123,28 +112,18 @@ void * compute_main(void * args)
 {
   size_t offset = *((size_t*)args);
   free(args);
-  // printf("I'm in compute thread %lu\n", offset);
-
-
 
   // Creating a matrix that would hold the complex initialisations
   double h = 4/(double)n_lines;
-  //printf("%0.19lf\n", h);
   double * x = (double *) malloc(sizeof(double) * n_lines);
   double * y = (double *) malloc(sizeof(double) * n_lines);
 
   x[0] = -2; y[0] = 2;
 
-  //printf("%lf %lf\n", x[0], y[0]);
   for(int i = 1; i<n_lines; ++i){
     x[i] = x[i-1] + h;
     y[i] = y[i-1] - h;
   }
-  /*for(int i = 0; i<n_lines; i++)
-    printf("x and y: %lf  %lf\n", x[i], y[i]);*/
-
-
-  //printf("Real: %lf and Complex: %lf\n", creal(z[1][1]), cimag(z[1][1]));
 
   // Switch Cases with Newtons Iterations and Checking
   double complex roots[deg_func-1];
@@ -236,18 +215,18 @@ void * compute_main(void * args)
 
     default:
       fprintf(stderr, "unexpected degree\n");
-      exit(1);     //Was Commented out for the purpose of jotting down code - maybe required in final file
+      exit(1);    
 
     }
 
   //BEGINNING ITERATION FOR NEWTONS COMPUTATION
 
-  double complex xk;    //May have to convert to pointer to avoid error(?)
-  double complex x_k1;    //May have to convert to pointer to avoid error(?)
-  double complex xdr;   //May have to convert to pointer to avoid error(?)
+  double complex xk;   
+  double complex x_k1;    
+  double complex xdr;   
 
-  int conv;   //Flag to store no. of iterations for convergence
-  int attr;   //Flag to store whic root the iteration converges to
+  int conv;   //no. of iterations for convergence
+  int attr;   //root the iteration converges to
 
   size_t conv_x;
   size_t attr_x;
@@ -260,8 +239,8 @@ void * compute_main(void * args)
       int * convergence = (int *) malloc(sizeof(int) * n_lines);
 
       for ( size_t cx = 0; cx < n_lines; ++cx ) {
-  attractor[cx] = 0;
-  convergence[cx] = 0;
+        attractor[cx] = 0;
+        convergence[cx] = 0;
       }
 
       conv_x = 0;
@@ -269,17 +248,16 @@ void * compute_main(void * args)
 
       // compute work item
       for ( size_t jx = 0; jx < n_lines; ++jx )
-  {
-    xk = x[jx] + I * y[ix];
-    //xk = z[ix][jx]; //Assigning initial starting value to xk for iteration
-
-    double abs_real_xk = creal(xk)*creal(xk);
-    double abs_imag_xk = cimag(xk)*cimag(xk);
+	{
+	  xk = x[jx] + I * y[ix];
+    
+	  double abs_real_xk = creal(xk)*creal(xk);
+	  double abs_imag_xk = cimag(xk)*cimag(xk);
 
         //PERFORMING VALIDATION CHECKS FOR ITERATIONS AND FOR ROOTS
 
         //Default value of attr set to 99 as that doesnt correspond to any root/color
-        for ( conv = 0, attr = 99; conv<MAX_ITERATION; ++conv ) {
+	  for ( conv = 0, attr = 99; conv<MAX_ITERATION; ++conv ) {
 
         if ((abs_real_xk > UPPER_BOUND) && (abs_imag_xk > UPPER_BOUND)) { 
           attr = 11;    //A Default color (maroon) which is not associated to any actual root is assigned
@@ -293,7 +271,6 @@ void * compute_main(void * args)
         }
 
         for (int i = 0; i < deg_func; i++) {
-              //xdr = xk-roots[i];
               double real_xdr = creal(xk) - creal(roots[i]);
               double imag_xdr = cimag(xk) - cimag(roots[i]);
             
@@ -314,63 +291,58 @@ void * compute_main(void * args)
     }
 
         // COMPUTATION OF NEWTONS ITERATION
-switch (deg_func)
-    {
-    case 1:
-      //STATEMENTS FOR DEGREE 1
-      x_k1 = xk - (xk-1);
-      break;
+        switch (deg_func) {
+          case 1:
+              //STATEMENTS FOR DEGREE 1
+              x_k1 = 1;
+              break;
 
-    case 2:
-      //STATEMENTS FOR DEGREE 2
-      x_k1 = xk - (((xk*xk)-1)/(2*xk));
-      break;
+            case 2:
+            //STATEMENTS FOR DEGREE 2
+              x_k1 = (0.5)*(xk) + (0.5)*(1/xk);
+              break;
 
-    case 3:
-      //STATEMENTS FOR DEGREE 3
-      x_k1 = xk - (((xk*xk*xk)-1)/(3*xk*xk));
-      break;
+            case 3:
+            //STATEMENTS FOR DEGREE 3
+              x_k1 = (0.666666666666667)*(xk) + (0.333333333333333)*(1/(xk*xk));
+              break;
 
-    case 4:
-      //STATEMENTS FOR DEGREE 4
-      x_k1 = xk - (((xk*xk*xk*xk)-1)/(4*xk*xk*xk));
-      break;
+            case 4:
+              //STATEMENTS FOR DEGREE 4
+          x_k1 = (0.750000000000000)*(xk) + (0.250000000000000)*(1/(xk*xk*xk));
+              break;
 
-    case 5:
-      //STATEMENTS FOR DEGREE 5
-      x_k1 = xk - (((xk*xk*xk*xk*xk)-1)/(5*xk*xk*xk*xk));
-      break;
+            case 5:
+              //STATEMENTS FOR DEGREE 5
+              x_k1 = (0.800000000000000)*(xk)+ (0.200000000000000)*(1/(xk*xk*xk*xk));
+              break;
 
-    case 6:
-      //STATEMENTS FOR DEGREE 6
-      x_k1 = xk - (((xk*xk*xk*xk*xk*xk)-1)/(6*xk*xk*xk*xk*xk));
-      break;
+            case 6:
+              //STATEMENTS FOR DEGREE 6
+              x_k1 = (0.833333333333333)*(xk) + (0.166666666666667)*(1/(xk*xk*xk*xk*xk));
+              break;
 
-    case 7:
-      //STATEMENTS FOR DEGREE 7
-      x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk)-1)/(7*xk*xk*xk*xk*xk*xk));
-      break;
+            case 7:
+              //STATEMENTS FOR DEGREE 7
+              x_k1 = (0.857142857142857)*(xk) + (0.142857142857142)*(1/(xk*xk*xk*xk*xk*xk));
+              break;
 
-    case 8:
-      //STATEMENTS FOR DEGREE 8
-      x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk*xk)-1)/(8*xk*xk*xk*xk*xk*xk*xk));
-      break;
+            case 8:
+              //STATEMENTS FOR DEGREE 8
+              x_k1 = (0.875000000000000)*(xk) + (0.125000000000000)*(1/(xk*xk*xk*xk*xk*xk*xk));
+              break;
 
-    case 9:
-      //STATEMENTS FOR DEGREE 9
-      x_k1 = xk - (((xk*xk*xk*xk*xk*xk*xk*xk*xk)-1)/(9*xk*xk*xk*xk*xk*xk*xk*xk));
-      break;
+            case 9:
+              //STATEMENTS FOR DEGREE 9
+              x_k1 = (0.888888888888889)*(xk) + (0.111111111111111)*(1/(xk*xk*xk*xk*xk*xk*xk*xk));
+              break;
 
-    default:
-      fprintf(stderr, "unexpected degree\n");
-      exit(1);
-    }
+            default:
+              fprintf(stderr, "unexpected degree\n");
+              exit(1);     
+            }
         
-
-        //printf("Complex Number: %0.20lf + (%0.20lf)i\n", creal(xk), cimag(xk));
-
         xk = x_k1;    //Updating the value of xk with the newly computed value for the next iteraion
-
 
       }
 
@@ -384,13 +356,7 @@ switch (deg_func)
     conv_x++;
     attr_x++;
 
-    //printf("Converged Complex Number: %0.20lf + (%0.20lf)i\n", creal(xk), cimag(xk));
-    //printf("Convergence after: %d iteration\n", conv);
-    //printf("Attractor at %d root\n", attr);
-
-
   }
-
       convergences[ix] = convergence;
       attractors[ix] = attractor;
 
@@ -412,8 +378,7 @@ switch (deg_func)
 void * write_main(void * args)
 {
   char * item_done_loc = (char*)calloc(n_lines, sizeof(char));
-  //printf("I'm in write thread\n");
-
+  
   // Open the files for attractor and convergence for writing
   char filename1[30];
   char filename2[30];
@@ -421,18 +386,16 @@ void * write_main(void * args)
   sprintf(filename2, "newton_convergence_x%d.ppm", deg_func);
 
   FILE * attr_file, * conv_file;
-  //attr_file = fopen("newton_attractors_x3.ppm", "wb"); /* b - binary mode */
-  //conv_file = fopen("newton_convergence_x3.ppm.ppm", "wb"); /* b - binary mode */
-  attr_file = fopen(filename1, "wb"); /* b - binary mode */
-  conv_file = fopen(filename2, "wb"); /* b - binary mode */
-
+  attr_file = fopen(filename1, "wb"); 
+  conv_file = fopen(filename2, "wb"); 
+  
   // Writing the File Header
   int max_color_val = 255;
   fprintf(attr_file, "P3\n%d %d\n%d\n", n_lines, n_lines, max_color_val);
   fprintf(conv_file, "P3\n%d %d\n%d\n", n_lines, n_lines, max_color_val);
 
   // Creating array of colors
-  char colors [12][13] ={
+  char colors [12][13] = {
        "255 000 000 ", //Red
        "000 255 000 ", //Green
        "000 000 255 ", //Blue
